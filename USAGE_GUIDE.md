@@ -1,37 +1,38 @@
 # CodeThreat CLI - Usage Guide
 
-## 🚀 **Quick Setup for New Terminal**
+## 🚀 **Quick Setup**
 
-### **Fish Shell (Your Current Shell)**
+### **Global Installation (Recommended)**
 ```bash
-# Navigate to CLI directory
-cd /Users/thyldrm/Desktop/codethreat/codethreat-appsec-cli
+# Install CLI globally
+npm install -g @codethreat/appsec-cli
 
-# Load environment variables
-source setup-env.fish
-
-# Or set manually
-set -gx CT_API_KEY "your_api_key_here"
-set -gx CT_SERVER_URL "http://localhost:3000"  # For development
+# Set environment variables
+export CT_API_KEY="your_api_key_here"
+export CT_SERVER_URL="https://app.codethreat.com"  # Or your server URL
 
 # Test CLI
 codethreat auth validate
 ```
 
-### **Bash/Zsh**
+### **Fish Shell**
 ```bash
-# Navigate to CLI directory
-cd /Users/thyldrm/Desktop/codethreat/codethreat-appsec-cli
-
-# Load environment variables
-source setup-env.sh
-
-# Or set manually
-export CT_API_KEY="your_api_key_here"
-export CT_SERVER_URL="http://localhost:3000"
+# Set environment variables
+set -gx CT_API_KEY "your_api_key_here"
+set -gx CT_SERVER_URL "https://app.codethreat.com"
 
 # Test CLI
 codethreat auth validate
+```
+
+### **Using NPX (No Installation)**
+```bash
+# Run directly with npx
+npx @codethreat/appsec-cli auth validate
+
+# Set environment variables first
+export CT_API_KEY="your_api_key_here"
+export CT_SERVER_URL="https://app.codethreat.com"
 ```
 
 ## 📁 **Configuration Methods**
@@ -47,17 +48,14 @@ codethreat auth validate
 
 ### **Environment File Setup**
 ```bash
-# 1. Copy example file
-cp .env.example .env
+# 1. Create .env file in your project
+echo "CT_API_KEY=your_actual_api_key" > .env
+echo "CT_SERVER_URL=https://app.codethreat.com" >> .env
 
-# 2. Edit with your values
-# CT_API_KEY=your_actual_api_key
-# CT_SERVER_URL=http://localhost:3000
-
-# 3. Load environment
-source setup-env.fish  # Fish shell
-# or
-source setup-env.sh    # Bash/Zsh
+# 2. Load environment variables
+source .env  # Bash/Zsh
+# or for Fish shell
+export (cat .env | grep -v '^#' | xargs -d '\n')
 ```
 
 ## 🔧 **Development vs Production**
@@ -65,50 +63,38 @@ source setup-env.sh    # Bash/Zsh
 ### **Development Environment**
 ```bash
 # Set development server
-set -gx CT_SERVER_URL "http://localhost:3000"
-
-# Or use environment-specific variable
-set -gx CT_SERVER_URL $CT_DEVELOPMENT_URL
+export CT_SERVER_URL="http://localhost:3000"
 ```
 
 ### **Production Environment**
 ```bash
 # Set production server
-set -gx CT_SERVER_URL "https://api.codethreat.com"
-
-# Or use environment-specific variable
-set -gx CT_SERVER_URL $CT_PRODUCTION_URL
+export CT_SERVER_URL="https://app.codethreat.com"
 ```
 
-### **Staging Environment**
+### **On-Premises Environment**
 ```bash
-# Set staging server
-set -gx CT_SERVER_URL $CT_STAGING_URL
+# Set your on-premises server
+export CT_SERVER_URL="https://codethreat.yourcompany.com"
 ```
 
 ## 📋 **Complete Workflow Example**
 
 ### **First Time Setup**
 ```bash
-# 1. Navigate to CLI directory
-cd /Users/thyldrm/Desktop/codethreat/codethreat-appsec-cli
+# 1. Install CLI globally
+npm install -g @codethreat/appsec-cli
 
-# 2. Copy and configure .env
-cp .env.example .env
-# Edit .env file with your API key and server URL
+# 2. Set environment variables
+export CT_API_KEY="your_api_key_here"
+export CT_SERVER_URL="https://app.codethreat.com"
 
-# 3. Load environment
-source setup-env.fish
-
-# 4. Validate setup
+# 3. Validate setup
 codethreat auth validate
 ```
 
 ### **Daily Usage**
 ```bash
-# Load environment (in new terminal)
-cd /Users/thyldrm/Desktop/codethreat/codethreat-appsec-cli && source setup-env.fish
-
 # Import repository
 codethreat repo import https://github.com/user/repo.git
 
@@ -124,7 +110,7 @@ codethreat scan results <scan-id> --format sarif
 # GitHub Actions
 env:
   CT_API_KEY: ${{ secrets.CODETHREAT_API_KEY }}
-  CT_SERVER_URL: "https://api.codethreat.com"
+  CT_SERVER_URL: "https://app.codethreat.com"
 run: |
   codethreat repo import ${{ github.repositoryUrl }}
   codethreat scan run $REPO_ID --wait --format sarif
@@ -132,7 +118,7 @@ run: |
 # GitLab CI/CD
 variables:
   CT_API_KEY: $CODETHREAT_API_KEY
-  CT_SERVER_URL: "https://api.codethreat.com"
+  CT_SERVER_URL: "https://app.codethreat.com"
 script:
   - codethreat scan run $REPO_ID --wait --format junit
 ```
@@ -166,12 +152,11 @@ echo "✅ CodeThreat environment loaded for this project"
 # Check if globally installed
 which codethreat
 
-# If not found, reinstall globally
-cd /Users/thyldrm/Desktop/codethreat/codethreat-appsec-cli
-sudo npm link
+# If not found, install globally
+npm install -g @codethreat/appsec-cli
 
-# Or use direct execution
-node /Users/thyldrm/Desktop/codethreat/codethreat-appsec-cli/dist/index.js --help
+# Or use npx (no installation required)
+npx @codethreat/appsec-cli --help
 ```
 
 ### **"Authentication invalid"**
@@ -192,8 +177,8 @@ curl -H "X-API-Key: $CT_API_KEY" $CT_SERVER_URL/api/v1/health
 # Check server status
 curl $CT_SERVER_URL/api/v1/health
 
-# Check if development server is running
-# In appsec directory: npm run dev
+# Verify server URL is correct
+echo $CT_SERVER_URL
 ```
 
 ## 🎯 **Best Practices**

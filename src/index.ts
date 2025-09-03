@@ -20,7 +20,7 @@ program
   .version(process.env.CLI_VERSION || '1.0.0')
   .option('-v, --verbose', 'Enable verbose output')
   .option('--api-key <key>', 'CodeThreat API key')
-  .option('--server-url <url>', 'CodeThreat server URL', process.env.CT_SERVER_URL || 'https://api.codethreat.com')
+  .option('--server-url <url>', 'CodeThreat server URL', process.env.CT_SERVER_URL || 'https://app.codethreat.com')
   .option('--org-id <id>', 'Organization ID')
   .option('--config <path>', 'Configuration file path')
   .hook('preAction', (thisCommand) => {

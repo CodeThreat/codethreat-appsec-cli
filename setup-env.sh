@@ -22,7 +22,7 @@ fi
 # Display current configuration
 echo ""
 echo "🎯 Current CLI Configuration:"
-echo "   Server URL: ${CT_SERVER_URL:-https://api.codethreat.com}"
+echo "   Server URL: ${CT_SERVER_URL:-https://app.codethreat.com}"
 echo "   API Key: ${CT_API_KEY:+Set}${CT_API_KEY:-Not set}"
 echo "   Organization: ${CT_ORG_ID:-Not set}"
 echo "   Verbose: ${CT_VERBOSE:-false}"

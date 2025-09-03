@@ -27,7 +27,7 @@ end
 # Display current configuration
 echo ""
 echo "🎯 Current CLI Configuration:"
-echo "   Server URL: "(set -q CT_SERVER_URL; and echo $CT_SERVER_URL; or echo "https://api.codethreat.com")
+echo "   Server URL: "(set -q CT_SERVER_URL; and echo $CT_SERVER_URL; or echo "https://app.codethreat.com")
 echo "   API Key: "(test -n "$CT_API_KEY"; and echo "Set"; or echo "Not set")
 echo "   Organization: "(set -q CT_ORG_ID; and echo $CT_ORG_ID; or echo "Not set")
 echo "   Verbose: "(set -q CT_VERBOSE; and echo $CT_VERBOSE; or echo "false")

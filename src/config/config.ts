@@ -72,7 +72,7 @@ function getEnvConfig(): CLIConfig {
   const savedCredentials = loadSavedCredentials();
 
   return {
-    serverUrl: process.env.CT_SERVER_URL || savedCredentials.serverUrl || process.env.CT_PRODUCTION_URL || 'https://api.codethreat.com',
+    serverUrl: process.env.CT_SERVER_URL || savedCredentials.serverUrl || process.env.CT_PRODUCTION_URL || 'https://app.codethreat.com',
     apiKey: process.env.CT_API_KEY || savedCredentials.apiKey,
     organizationId: process.env.CT_ORG_ID,
     defaultScanTypes: (process.env.CT_DEFAULT_SCAN_TYPES || 'sast,sca,secrets').split(',') as ScanType[],

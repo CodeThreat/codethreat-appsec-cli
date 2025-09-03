@@ -131,7 +131,7 @@ codethreat scan results <scan-id> --format csv --severity critical,high
 
 ```yaml
 # Server configuration
-server_url: "https://api.codethreat.com"
+server_url: "https://app.codethreat.com"  # Or your server URL
 organization_id: "your-org-id"
 
 # Default scan settings
