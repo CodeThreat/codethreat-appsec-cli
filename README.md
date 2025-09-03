@@ -219,7 +219,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: CodeThreat Security Scan
-        uses: CodeThreat/codethreat-github-action@v1
+        uses: CodeThreat/codethreat-appsec-github-action@v1
         with:
           # Required
           api-key: ${{ secrets.CODETHREAT_API_KEY }}
