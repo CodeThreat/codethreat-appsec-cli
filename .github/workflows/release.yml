@@ -169,9 +169,19 @@ jobs:
           asset_name: codethreat-windows-amd64.exe
           asset_content_type: application/octet-stream
           
-      - name: Update Latest Tag
+      - name: Update Latest Release
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git tag -f latest ${{ steps.version.outputs.version }}
-          git push origin latest --force
+          # Delete existing latest release if exists
+          gh release delete latest --yes || true
+          
+          # Create new latest release with current binaries
+          gh release create latest \
+            --title "Latest Stable Release" \
+            --notes "Latest stable version: ${{ steps.version.outputs.version }}" \
+            ./binaries/codethreat-linux-amd64 \
+            ./binaries/codethreat-linux-arm64 \
+            ./binaries/codethreat-darwin-amd64 \
+            ./binaries/codethreat-darwin-arm64 \
+            ./binaries/codethreat-windows-amd64.exe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
