@@ -44,3 +44,4 @@ codethreat-results/
 *.sarif
 *.junit.xml
 codethreat-results.*
+binaries/

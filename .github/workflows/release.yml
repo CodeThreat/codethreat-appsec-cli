@@ -173,5 +173,5 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git tag -f latest
+          git tag -f latest ${{ steps.version.outputs.version }}
           git push origin latest --force
