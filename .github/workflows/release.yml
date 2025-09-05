@@ -1,0 +1,179 @@
+name: Release with Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0, v1.0.1, etc.
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # Required for creating releases
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Build CLI
+        run: npm run build
+        
+      - name: Build Binaries
+        run: npm run build:binaries
+        
+      - name: List Generated Binaries
+        run: |
+          echo "Generated binaries:"
+          ls -la binaries/
+          
+      - name: Rename Binaries (Fix naming for Jenkins plugin)
+        run: |
+          # Rename to match Jenkins plugin expectations
+          cd binaries
+          
+          # Linux binaries
+          mv codethreat-linux-x64 codethreat-linux-amd64
+          mv codethreat-linux-arm64 codethreat-linux-arm64
+          
+          # macOS binaries  
+          mv codethreat-darwin-x64 codethreat-darwin-amd64
+          mv codethreat-darwin-arm64 codethreat-darwin-arm64
+          
+          # Windows binary
+          mv codethreat-windows.exe codethreat-windows-amd64.exe
+          
+          echo "Renamed binaries:"
+          ls -la
+          
+      - name: Make Binaries Executable
+        run: |
+          chmod +x binaries/codethreat-linux-*
+          chmod +x binaries/codethreat-darwin-*
+          
+      - name: Get Version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: v$VERSION"
+          
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: CodeThreat CLI ${{ steps.version.outputs.version }}
+          body: |
+            ## CodeThreat CLI ${{ steps.version.outputs.version }}
+            
+            ### 🚀 Features
+            - Multi-platform security scanning (SAST, SCA, Secrets, IaC)
+            - CI/CD integration support (GitHub Actions, Azure DevOps, Jenkins)
+            - AI-powered false positive elimination
+            - Multiple output formats (SARIF, JSON, JUnit, CSV, XML)
+            
+            ### 📦 Installation
+            
+            **NPM Package (Recommended):**
+            ```bash
+            npm install -g @codethreat/appsec-cli@${{ steps.version.outputs.version }}
+            ```
+            
+            **Binary Downloads:**
+            - **Linux amd64**: `codethreat-linux-amd64`
+            - **Linux arm64**: `codethreat-linux-arm64`  
+            - **macOS Intel**: `codethreat-darwin-amd64`
+            - **macOS Apple Silicon**: `codethreat-darwin-arm64`
+            - **Windows**: `codethreat-windows-amd64.exe`
+            
+            ### 🔧 Usage
+            ```bash
+            # Authentication
+            codethreat auth login --api-key <your-key>
+            
+            # Repository import
+            codethreat repo import https://github.com/user/repo.git
+            
+            # Security scan
+            codethreat scan run <repo-id> --types sast,sca,secrets --wait
+            ```
+            
+            ### 🏢 CI/CD Integration
+            - **GitHub Actions**: Use `CodeThreat/codethreat-github-action@v1`
+            - **Azure DevOps**: Use CodeThreat Security Scan extension
+            - **Jenkins**: Use CodeThreat Security Scan plugin
+            
+            For more information, visit [docs.codethreat.com](https://docs.codethreat.com)
+          draft: false
+          prerelease: false
+          
+      # Upload all binaries as release assets
+      - name: Upload Linux amd64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./binaries/codethreat-linux-amd64
+          asset_name: codethreat-linux-amd64
+          asset_content_type: application/octet-stream
+          
+      - name: Upload Linux arm64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./binaries/codethreat-linux-arm64
+          asset_name: codethreat-linux-arm64
+          asset_content_type: application/octet-stream
+          
+      - name: Upload macOS amd64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./binaries/codethreat-darwin-amd64
+          asset_name: codethreat-darwin-amd64
+          asset_content_type: application/octet-stream
+          
+      - name: Upload macOS arm64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./binaries/codethreat-darwin-arm64
+          asset_name: codethreat-darwin-arm64
+          asset_content_type: application/octet-stream
+          
+      - name: Upload Windows Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./binaries/codethreat-windows-amd64.exe
+          asset_name: codethreat-windows-amd64.exe
+          asset_content_type: application/octet-stream
+          
+      - name: Update Latest Tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -f latest
+          git push origin latest --force
