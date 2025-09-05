@@ -1,6 +1,6 @@
 {
   "name": "@codethreat/appsec-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CodeThreat AppSec CLI for CI/CD integration and automated security scanning",
   "main": "dist/index.js",
   "bin": {

@@ -37,23 +37,23 @@ jobs:
           echo "Generated binaries:"
           ls -la binaries/
           
-      - name: Rename Binaries (Fix naming for Jenkins plugin)
+      - name: Rename Binaries (Standard naming convention)
         run: |
-          # Rename to match Jenkins plugin expectations
+          # Rename to standard platform-architecture naming
           cd binaries
           
           # Linux binaries
           mv codethreat-linux-x64 codethreat-linux-amd64
-          mv codethreat-linux-arm64 codethreat-linux-arm64
+          # codethreat-linux-arm64 already correct
           
           # macOS binaries  
           mv codethreat-darwin-x64 codethreat-darwin-amd64
-          mv codethreat-darwin-arm64 codethreat-darwin-arm64
+          # codethreat-darwin-arm64 already correct
           
           # Windows binary
           mv codethreat-windows.exe codethreat-windows-amd64.exe
           
-          echo "Renamed binaries:"
+          echo "Final binaries:"
           ls -la
           
       - name: Make Binaries Executable
@@ -81,7 +81,7 @@ jobs:
             
             ### 🚀 Features
             - Multi-platform security scanning (SAST, SCA, Secrets, IaC)
-            - CI/CD integration support (GitHub Actions, Azure DevOps, Jenkins)
+            - CI/CD integration support for all major platforms
             - AI-powered false positive elimination
             - Multiple output formats (SARIF, JSON, JUnit, CSV, XML)
             
@@ -112,9 +112,7 @@ jobs:
             ```
             
             ### 🏢 CI/CD Integration
-            - **GitHub Actions**: Use `CodeThreat/codethreat-github-action@v1`
-            - **Azure DevOps**: Use CodeThreat Security Scan extension
-            - **Jenkins**: Use CodeThreat Security Scan plugin
+            Compatible with all major CI/CD platforms including GitHub Actions, Azure DevOps, Jenkins, GitLab CI/CD, and more.
             
             For more information, visit [docs.codethreat.com](https://docs.codethreat.com)
           draft: false
