@@ -32,7 +32,7 @@ export const scanCommand = new Command('scan')
           const scanTypes = options.types.split(',').map((t: string) => t.trim()) as ScanType[];
 
           // Validate scan types
-          const validScanTypes = ['sast', 'sca', 'secrets', 'iac'];
+          const validScanTypes = ['sast', 'sca', 'secrets', 'iac', 'scan'];
           const invalidTypes = scanTypes.filter(t => !validScanTypes.includes(t));
           if (invalidTypes.length > 0) {
             console.error(chalk.red(`Invalid scan types: ${invalidTypes.join(', ')}`));
@@ -45,7 +45,7 @@ export const scanCommand = new Command('scan')
           const result = await apiClient.runScan({
             repositoryId,
             branch: options.branch,
-            scanTypes: ['scan'], // Unified scan type for shift-ql compatibility
+            scanTypes: [], // Empty array for shift-ql compatibility
             wait: options.wait,
             timeout: parseInt(options.timeout),
             pollInterval: parseInt(options.pollInterval),

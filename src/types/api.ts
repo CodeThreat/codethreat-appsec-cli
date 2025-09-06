@@ -222,6 +222,6 @@ export interface CLIInfo {
 
 // Export format types
 export type ExportFormat = 'json' | 'sarif' | 'csv' | 'xml' | 'junit';
-export type ScanType = 'sast' | 'sca' | 'secrets' | 'iac';
+export type ScanType = 'sast' | 'sca' | 'secrets' | 'iac' | 'scan';
 export type Provider = 'github' | 'gitlab' | 'bitbucket' | 'azure_devops';
 export type ScanTrigger = 'manual' | 'ci/cd' | 'api';
