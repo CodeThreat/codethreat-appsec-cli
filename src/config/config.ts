@@ -77,7 +77,7 @@ function getEnvConfig(): CLIConfig {
     organizationId: process.env.CT_ORG_ID,
     defaultScanTypes: (process.env.CT_DEFAULT_SCAN_TYPES || 'sast,sca,secrets').split(',') as ScanType[],
     defaultBranch: process.env.CT_DEFAULT_BRANCH || 'main',
-    defaultTimeout: parseInt(process.env.CT_TIMEOUT || '1800'),
+    defaultTimeout: parseInt(process.env.CT_TIMEOUT || '3600'),
     defaultPollInterval: parseInt(process.env.CT_POLL_INTERVAL || '10'),
     defaultFormat: (process.env.CT_DEFAULT_FORMAT || 'json') as ExportFormat,
     outputDir: process.env.CT_OUTPUT_DIR || './codethreat-results',

@@ -17,7 +17,7 @@ export const scanCommand = new Command('scan')
       .option('-b, --branch <branch>', 'Branch to scan', 'main')
       .option('-t, --types <types>', 'Scan types (comma-separated)', 'sast,sca,secrets')
       .option('-w, --wait', 'Wait for scan completion', false)
-      .option('--timeout <seconds>', 'Timeout in seconds', '1800')
+      .option('--timeout <seconds>', 'Timeout in seconds', '3600')
       .option('--poll-interval <seconds>', 'Polling interval in seconds', '10')
       .option('--trigger <trigger>', 'Scan trigger type', 'api')
       .option('--pr <pr-id>', 'Pull request ID (if scanning PR)')
@@ -45,7 +45,7 @@ export const scanCommand = new Command('scan')
           const result = await apiClient.runScan({
             repositoryId,
             branch: options.branch,
-            scanTypes,
+            scanTypes: ['scan'], // Unified scan type for shift-ql compatibility
             wait: options.wait,
             timeout: parseInt(options.timeout),
             pollInterval: parseInt(options.pollInterval),
