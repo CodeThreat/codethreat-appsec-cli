@@ -3,12 +3,13 @@
   "version": "1.0.9",
   "description": "CodeThreat AppSec CLI for CI/CD integration and automated security scanning",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "codethreat": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsup src/index.ts --format cjs --target node18 --clean",
+    "build": "tsup src/index.ts --format cjs --target node18 --clean --dts",
     "build:binaries": "npm run build && npm run pkg:all",
     "pkg:all": "npm run pkg:linux && npm run pkg:darwin && npm run pkg:windows",
     "pkg:linux": "pkg dist/index.js --targets node18-linux-x64,node18-linux-arm64 --output binaries/codethreat-linux",

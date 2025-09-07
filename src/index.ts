@@ -53,5 +53,11 @@ process.on('unhandledRejection', (reason) => {
   process.exit(1);
 });
 
-// Parse arguments and execute
-program.parse();
+// Export API client for programmatic usage
+export { CodeThreatApiClient } from './lib/api-client';
+export * from './types/api';
+
+// Parse arguments and execute (only when run as CLI)
+if (require.main === module) {
+  program.parse();
+}
