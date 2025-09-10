@@ -21,6 +21,9 @@ export class CodeThreatApiClient {
   private config = getConfig();
 
   constructor() {
+    // Reload config to pick up environment variables set by Azure extension
+    this.config = getConfig();
+    
     // Use environment variable or config for server URL
     const serverUrl = process.env.CT_SERVER_URL || this.config.serverUrl;
     const timeout = parseInt(process.env.CT_API_TIMEOUT || '30000');
@@ -40,10 +43,6 @@ export class CodeThreatApiClient {
       const apiKey = this.config.apiKey || process.env.CT_API_KEY;
       if (apiKey) {
         config.headers['X-API-Key'] = apiKey;
-      }
-      
-      if (this.config.verbose) {
-        console.log(chalk.gray(`→ ${config.method?.toUpperCase()} ${config.url}`));
       }
       
       return config;
@@ -103,6 +102,7 @@ export class CodeThreatApiClient {
    */
   async importRepository(options: {
     url: string;
+    organizationSlug?: string;
     name?: string;
     provider?: Provider;
     branch?: string;
@@ -111,9 +111,32 @@ export class CodeThreatApiClient {
     isPrivate?: boolean;
     description?: string;
   }): Promise<RepositoryImportResponse> {
+    // Create request body - ensure organizationSlug is ALWAYS included
+    const organizationSlug = options.organizationSlug || this.config.organizationSlug || process.env.CT_ORG_SLUG || '';
+    
+    // Build clean request body without undefined values
+    const requestBody: any = {
+      url: options.url,
+      organizationSlug: organizationSlug
+    };
+    
+    // Only add optional fields if they have values
+    if (options.name) requestBody.name = options.name;
+    if (options.provider) requestBody.provider = options.provider;
+    if (options.branch) requestBody.branch = options.branch;
+    if (options.autoScan !== undefined) requestBody.autoScan = options.autoScan;
+    if (options.scanTypes) requestBody.scanTypes = options.scanTypes;
+    if (options.isPrivate !== undefined) requestBody.isPrivate = options.isPrivate;
+    if (options.description) requestBody.description = options.description;
+    
+    // Validate organizationSlug is present
+    if (!requestBody.organizationSlug) {
+      throw new Error('Organization slug is required. Please set CT_ORG_SLUG environment variable or provide organizationSlug parameter.');
+    }
+    
     const response = await this.client.post<ApiResponse<RepositoryImportResponse>>(
       '/api/v1/repositories/import',
-      options
+      requestBody
     );
     
     return this.handleResponse(response);
@@ -135,6 +158,7 @@ export class CodeThreatApiClient {
    */
   async runScan(options: {
     repositoryId: string;
+    organizationSlug?: string;
     branch?: string;
     scanTypes: ScanType[];
     wait?: boolean;
@@ -145,11 +169,37 @@ export class CodeThreatApiClient {
     commitSha?: string;
     metadata?: Record<string, string>;
   }): Promise<ScanRunResponse> {
+    // Get organizationSlug from options, config, or environment
+    const organizationSlug = options.organizationSlug || this.config.organizationSlug || process.env.CT_ORG_SLUG || '';
+    
+    // Build clean request body without undefined values
+    const requestBody: any = {
+      repositoryId: options.repositoryId,
+      organizationSlug: organizationSlug,
+      scanTypes: options.scanTypes
+    };
+    
+    // Only add optional fields if they have values
+    if (options.branch) requestBody.branch = options.branch;
+    if (options.wait !== undefined) requestBody.wait = options.wait;
+    if (options.timeout !== undefined) requestBody.timeout = options.timeout;
+    if (options.pollInterval !== undefined) requestBody.pollInterval = options.pollInterval;
+    if (options.scanTrigger) requestBody.scanTrigger = options.scanTrigger;
+    if (options.pullRequestId) requestBody.pullRequestId = options.pullRequestId;
+    if (options.commitSha) requestBody.commitSha = options.commitSha;
+    if (options.metadata) requestBody.metadata = options.metadata;
+    
+    
+    // Validate organizationSlug is present
+    if (!requestBody.organizationSlug) {
+      throw new Error('Organization slug is required. Please set CT_ORG_SLUG environment variable or provide organizationSlug parameter.');
+    }
+    
     const response = await this.client.post<ApiResponse<ScanRunResponse>>(
       '/api/v1/scans/run',
-      options,
+      requestBody,
       {
-        timeout: options.wait ? (options.timeout || 1800) * 1000 + 30000 : 30000, // Add 30s buffer for API processing
+        timeout: options.wait ? (options.timeout || 43200) * 1000 + 30000 : 30000, // Default 12 hours for long scans, add 30s buffer for API processing
       }
     );
     
@@ -160,9 +210,15 @@ export class CodeThreatApiClient {
    * Get scan status
    */
   async getScanStatus(scanId: string, includeLogs = false): Promise<ScanStatusResponse> {
+    // Include organizationSlug if available
+    const params: any = { includeLogs };
+    if (this.config.organizationSlug || process.env.CT_ORG_SLUG) {
+      params.organizationSlug = this.config.organizationSlug || process.env.CT_ORG_SLUG;
+    }
+    
     const response = await this.client.get<ApiResponse<ScanStatusResponse>>(
       `/api/v1/scans/${scanId}/status`,
-      { params: { includeLogs } }
+      { params }
     );
     
     return this.handleResponse(response);
@@ -182,9 +238,16 @@ export class CodeThreatApiClient {
     ruleIds?: string[];
   }): Promise<ScanResultsResponse> {
     const { scanId, ...params } = options;
+    
+    // Include organizationSlug if available
+    const requestParams: any = { ...params };
+    if (this.config.organizationSlug || process.env.CT_ORG_SLUG) {
+      requestParams.organizationSlug = this.config.organizationSlug || process.env.CT_ORG_SLUG;
+    }
+    
     const response = await this.client.get<ApiResponse<ScanResultsResponse>>(
       `/api/v1/scans/${scanId}/results`,
-      { params }
+      { params: requestParams }
     );
     
     return this.handleResponse(response);
@@ -246,10 +309,6 @@ export class CodeThreatApiClient {
   private handleResponse<T>(response: AxiosResponse<ApiResponse<T>>): T {
     const { data } = response;
     
-    if (this.config.verbose) {
-      console.log(chalk.gray('Response data:'), JSON.stringify(data, null, 2));
-    }
-    
     if (!data.success) {
       throw new Error(data.error?.message || 'API request failed');
     }
@@ -265,10 +324,6 @@ export class CodeThreatApiClient {
    * Handle API errors with user-friendly messages
    */
   private handleApiError(error: AxiosError): void {
-    if (this.config.verbose) {
-      console.error(chalk.red('API Error Details:'), error.response?.data || error.message);
-    }
-
     if (error.response) {
       const status = error.response.status;
       const data = error.response.data as any;

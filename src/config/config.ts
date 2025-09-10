@@ -10,6 +10,7 @@ export interface CLIConfig {
   serverUrl: string;
   apiKey?: string;
   organizationId?: string;
+  organizationSlug?: string;
   
   // Default scan settings
   defaultScanTypes: ScanType[];
@@ -135,6 +136,7 @@ export function loadConfig(): CLIConfig {
   if (process.env.CT_API_KEY) currentConfig.apiKey = process.env.CT_API_KEY;
   if (process.env.CT_SERVER_URL) currentConfig.serverUrl = process.env.CT_SERVER_URL;
   if (process.env.CT_ORG_ID) currentConfig.organizationId = process.env.CT_ORG_ID;
+  if (process.env.CT_ORG_SLUG) currentConfig.organizationSlug = process.env.CT_ORG_SLUG;
   if (process.env.CT_VERBOSE === 'true') currentConfig.verbose = true;
   
   // Validate required configuration

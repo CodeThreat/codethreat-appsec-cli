@@ -14,6 +14,7 @@ export const scanCommand = new Command('scan')
     new Command('run')
       .description('Run security scan on repository')
       .argument('<repository-id>', 'Repository ID to scan')
+      .requiredOption('-org, --organization <slug>', 'Organization slug (required)')
       .option('-b, --branch <branch>', 'Branch to scan', 'main')
       .option('-t, --types <types>', 'Scan types (comma-separated)', 'sast,sca,secrets')
       .option('-w, --wait', 'Wait for scan completion', false)
@@ -44,6 +45,7 @@ export const scanCommand = new Command('scan')
 
           const result = await apiClient.runScan({
             repositoryId,
+            organizationSlug: options.organization,
             branch: options.branch,
             scanTypes: [], // Empty array for shift-ql compatibility
             wait: options.wait,

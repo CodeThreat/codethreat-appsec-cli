@@ -13,6 +13,7 @@ export const repoCommand = new Command('repo')
     new Command('import')
       .description('Import a repository from Git URL')
       .argument('<url>', 'Git repository URL')
+      .requiredOption('-org, --organization <slug>', 'Organization slug (required)')
       .option('-n, --name <name>', 'Repository name (auto-detected from URL if not provided)')
       .option('-p, --provider <provider>', 'Git provider (github|gitlab|bitbucket|azure_devops)')
       .option('-b, --branch <branch>', 'Default branch', 'main')
@@ -41,6 +42,7 @@ export const repoCommand = new Command('repo')
 
           const result = await apiClient.importRepository({
             url,
+            organizationSlug: options.organization,
             name: options.name,
             provider: options.provider as Provider,
             branch: options.branch,
