@@ -180,6 +180,8 @@ export class CodeThreatApiClient {
       organizationSlug: organizationSlug,
       scanTypes: options.scanTypes,
       wait: false, // ALWAYS false - we do client-side polling to avoid serverless timeouts
+      timeout: 1800, // Send to backend (required by validation) but not used for polling
+      pollInterval: 10, // Send to backend (required by validation) but not used for polling
     };
     
     // Only add optional fields if they have values
