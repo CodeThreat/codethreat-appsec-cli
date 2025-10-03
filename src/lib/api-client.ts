@@ -154,7 +154,9 @@ export class CodeThreatApiClient {
   }
 
   /**
-   * Run scan (synchronous or asynchronous)
+   * Run scan with client-side polling (serverless-friendly)
+   * This method always starts an async scan and polls from the client side
+   * to avoid serverless function timeouts (Netlify/Vercel limits)
    */
   async runScan(options: {
     repositoryId: string;
@@ -176,34 +178,101 @@ export class CodeThreatApiClient {
     const requestBody: any = {
       repositoryId: options.repositoryId,
       organizationSlug: organizationSlug,
-      scanTypes: options.scanTypes
+      scanTypes: options.scanTypes,
+      wait: false, // ALWAYS false - we do client-side polling to avoid serverless timeouts
     };
     
     // Only add optional fields if they have values
     if (options.branch) requestBody.branch = options.branch;
-    if (options.wait !== undefined) requestBody.wait = options.wait;
-    if (options.timeout !== undefined) requestBody.timeout = options.timeout;
-    if (options.pollInterval !== undefined) requestBody.pollInterval = options.pollInterval;
     if (options.scanTrigger) requestBody.scanTrigger = options.scanTrigger;
     if (options.pullRequestId) requestBody.pullRequestId = options.pullRequestId;
     if (options.commitSha) requestBody.commitSha = options.commitSha;
     if (options.metadata) requestBody.metadata = options.metadata;
-    
     
     // Validate organizationSlug is present
     if (!requestBody.organizationSlug) {
       throw new Error('Organization slug is required. Please set CT_ORG_SLUG environment variable or provide organizationSlug parameter.');
     }
     
+    // Start async scan (returns immediately, no serverless timeout)
     const response = await this.client.post<ApiResponse<ScanRunResponse>>(
       '/api/v1/scans/run',
       requestBody,
       {
-        timeout: options.wait ? (options.timeout || 43200) * 1000 + 30000 : 30000, // Default 12 hours for long scans, add 30s buffer for API processing
+        timeout: 30000, // 30 seconds - only for starting scan, not waiting
       }
     );
     
-    return this.handleResponse(response);
+    const scanResponse = this.handleResponse(response);
+    
+    // If wait=true, do client-side polling
+    if (options.wait) {
+      return await this.pollScanCompletion(
+        scanResponse.scan.id,
+        options.timeout || 43200, // Default 12 hours
+        options.pollInterval || 30  // Default 30 seconds
+      );
+    }
+    
+    return scanResponse;
+  }
+
+  /**
+   * Poll scan status until completion (client-side polling)
+   * This avoids serverless function timeouts by polling from the client
+   */
+  private async pollScanCompletion(
+    scanId: string,
+    timeoutSeconds: number,
+    pollIntervalSeconds: number
+  ): Promise<ScanRunResponse> {
+    const startTime = Date.now();
+    const timeoutMs = timeoutSeconds * 1000;
+    const pollIntervalMs = pollIntervalSeconds * 1000;
+    
+    if (this.config.verbose) {
+      console.log(`⏳ Polling scan ${scanId} (timeout: ${timeoutSeconds}s, interval: ${pollIntervalSeconds}s)`);
+    }
+    
+    while (Date.now() - startTime < timeoutMs) {
+      // Get current scan status
+      const statusResponse = await this.getScanStatus(scanId, false);
+      
+      if (statusResponse.scan.status === 'COMPLETED') {
+        if (this.config.verbose) {
+          console.log(`✅ Scan completed in ${Math.round((Date.now() - startTime) / 1000)}s`);
+        }
+        
+        // Return full response with results
+        return {
+          scan: statusResponse.scan,
+          synchronous: true,
+          results: {
+            total: statusResponse.results.violationCount,
+            critical: statusResponse.results.summary.critical,
+            high: statusResponse.results.summary.high,
+            medium: statusResponse.results.summary.medium,
+            low: statusResponse.results.summary.low,
+          },
+          duration: Math.round((Date.now() - startTime) / 1000),
+        };
+      }
+      
+      if (statusResponse.scan.status === 'FAILED') {
+        throw new Error(`Scan failed during execution`);
+      }
+      
+      if (this.config.verbose) {
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        console.log(`⏳ Scan status: ${statusResponse.scan.status} (${elapsed}s elapsed)`);
+      }
+      
+      // Wait before next poll
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+    }
+    
+    // Timeout reached
+    throw new Error(`Scan timeout after ${timeoutSeconds} seconds. Scan ID: ${scanId}`);
   }
 
   /**
