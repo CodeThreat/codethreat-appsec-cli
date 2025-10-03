@@ -281,8 +281,15 @@ export class CodeThreatApiClient {
    * Get scan status
    */
   async getScanStatus(scanId: string, includeLogs = false): Promise<ScanStatusResponse> {
+    // Build query params
+    const params: any = {};
+    
+    // Only add includeLogs if true (backend defaults to false)
+    if (includeLogs) {
+      params.includeLogs = true;
+    }
+    
     // Include organizationSlug if available
-    const params: any = { includeLogs };
     if (this.config.organizationSlug || process.env.CT_ORG_SLUG) {
       params.organizationSlug = this.config.organizationSlug || process.env.CT_ORG_SLUG;
     }
