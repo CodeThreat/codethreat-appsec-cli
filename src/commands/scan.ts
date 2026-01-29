@@ -25,6 +25,10 @@ export const scanCommand = new Command('scan')
       .option('--commit <sha>', 'Commit SHA')
       .option('-f, --format <format>', 'Output format (json|table)', 'table')
       .option('-o, --output <file>', 'Output file (optional)')
+      .option('--max-critical <number>', 'Fail if critical >= threshold (-1 = disabled)', '-1')
+      .option('--max-high <number>', 'Fail if high >= threshold (-1 = disabled)', '-1')
+      .option('--max-medium <number>', 'Fail if medium >= threshold (-1 = disabled)', '-1')
+      .option('--max-low <number>', 'Fail if low >= threshold (-1 = disabled)', '-1')
       .action(async (repositoryId, options) => {
         try {
           const config = getConfig();
@@ -95,23 +99,51 @@ export const scanCommand = new Command('scan')
                 console.log(`  Security Score: ${result.scan.securityScore}/100`);
               }
 
-              // Check for CI/CD failure conditions
-              if (config.failOnCritical && result.results.critical > 0) {
+              // Check for CI/CD failure conditions with numeric thresholds
+              const maxCritical = parseInt(options.maxCritical || '-1', 10);
+              const maxHigh = parseInt(options.maxHigh || '-1', 10);
+              const maxMedium = parseInt(options.maxMedium || '-1', 10);
+              const maxLow = parseInt(options.maxLow || '-1', 10);
+
+              // Critical threshold check
+              if (maxCritical >= 0 && result.results.critical >= maxCritical) {
                 console.log();
-                console.error(chalk.red('❌ Build should fail: Critical vulnerabilities found'));
+                console.error(chalk.red(`❌ Build failed: ${result.results.critical} critical vulnerabilities found (threshold: ${maxCritical})`));
                 process.exit(1);
               }
 
-              if (config.failOnHigh && result.results.high > 0) {
+              // High threshold check
+              if (maxHigh >= 0 && result.results.high >= maxHigh) {
                 console.log();
-                console.error(chalk.red('❌ Build should fail: High severity vulnerabilities found'));
+                console.error(chalk.red(`❌ Build failed: ${result.results.high} high severity vulnerabilities found (threshold: ${maxHigh})`));
                 process.exit(1);
               }
 
+              // Medium threshold check
+              if (maxMedium >= 0 && result.results.medium >= maxMedium) {
+                console.log();
+                console.error(chalk.red(`❌ Build failed: ${result.results.medium} medium severity vulnerabilities found (threshold: ${maxMedium})`));
+                process.exit(1);
+              }
+
+              // Low threshold check
+              if (maxLow >= 0 && result.results.low >= maxLow) {
+                console.log();
+                console.error(chalk.red(`❌ Build failed: ${result.results.low} low severity vulnerabilities found (threshold: ${maxLow})`));
+                process.exit(1);
+              }
+
+              // Total violations check (backward compatibility with config)
               if (config.maxViolations && result.results.total > config.maxViolations) {
                 console.log();
                 console.error(chalk.red(`❌ Build should fail: Too many violations (${result.results.total} > ${config.maxViolations})`));
                 process.exit(1);
+              }
+
+              // Log success if thresholds are set
+              if (maxCritical >= 0 || maxHigh >= 0 || maxMedium >= 0 || maxLow >= 0) {
+                console.log();
+                console.log(chalk.green('✅ All threshold checks passed'));
               }
             } else {
               console.log();
